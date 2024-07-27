@@ -1,4 +1,4 @@
-package ru.pyshop.recognizer.presentation.views.faceContourView
+package ru.pyshop.recognizer.presentation.views
 
 import android.graphics.Point
 import androidx.compose.foundation.Canvas
@@ -9,38 +9,45 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.DrawScope
 import androidx.compose.ui.graphics.drawscope.Stroke
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.unit.dp
 
+// Функция зарисовки котура лица
 @Composable
-fun FaceContourView(contour: List<Point>, modifier: Modifier = Modifier) {
+fun FaceContourView(contours: List<List<Point>>, modifier: Modifier = Modifier) {
     Canvas(modifier = modifier.fillMaxSize()) {
-        drawFaceContour(contour)
+        // Проходим по всем обнаруженным лицам
+        contours.forEach { contour ->
+            drawFaceContour(contour)
+        }
     }
 }
 
 private fun DrawScope.drawFaceContour(contour: List<Point>) {
     val path = Path().apply {
         if (contour.isNotEmpty()) {
+            // Начало контура
             val firstPoint = contour.first()
             moveTo(
                 firstPoint.x.toFloat(),
                 firstPoint.y.toFloat()
             )
 
+            // Проходим по всем точкам
             contour.forEach { point ->
-                drawRect(
+                // Рисуем круг
+                drawCircle(
                     color = Color.White,
-                    topLeft = androidx.compose.ui.geometry.Offset(
-                        point.x.toFloat() - 4.5f,
-                        point.y.toFloat() - 4.5f
+                    center = androidx.compose.ui.geometry.Offset(
+                        point.x.toFloat(),
+                        point.y.toFloat()
                     ),
-                    size = androidx.compose.ui.geometry.Size(9f, 9f)
+                    radius = 3f,
                 )
             }
         }
     }
 
+    // Выводим контур
     drawPath(
         path = path,
         color = Color.White,

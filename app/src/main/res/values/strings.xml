@@ -1,3 +1,7 @@
 <resources>
+    <!--  System  -->
     <string name="app_name">Face Recognizer</string>
+
+    <!--  UI  -->
+    <string name="switch_camera_button">Повернуть камеру</string>
 </resources>
