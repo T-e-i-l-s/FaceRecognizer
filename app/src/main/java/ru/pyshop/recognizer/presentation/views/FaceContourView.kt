@@ -53,7 +53,7 @@ private fun DrawScope.drawFaceContour(contour: List<Point>) {
                         point.x.toFloat(),
                         point.y.toFloat()
                     ),
-                    radius = 3f,
+                    radius = 1.5f,
                 )
             }
         }

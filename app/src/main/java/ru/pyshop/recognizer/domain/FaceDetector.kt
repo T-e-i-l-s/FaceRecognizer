@@ -5,9 +5,8 @@ import androidx.annotation.OptIn
 import androidx.camera.core.ExperimentalGetImage
 import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
-import com.google.mlkit.vision.face.FaceDetection
-import com.google.mlkit.vision.face.FaceDetectorOptions
-import com.google.mlkit.vision.face.FaceLandmark
+import com.google.mlkit.vision.facemesh.FaceMeshDetection
+import com.google.mlkit.vision.facemesh.FaceMeshDetectorOptions
 import ru.pyshop.recognizer.domain.enums.CameraSide
 import ru.pyshop.recognizer.domain.models.FaceModel
 
@@ -26,14 +25,12 @@ fun addFaceDetectionListener(
         val image = InputImage.fromMediaImage(mediaImage, imageProxy.imageInfo.rotationDegrees)
 
         // Настраиваем модель разметки лиц
-        val options = FaceDetectorOptions.Builder()
-            .setPerformanceMode(FaceDetectorOptions.PERFORMANCE_MODE_FAST)
-            .setLandmarkMode(FaceDetectorOptions.LANDMARK_MODE_ALL)
-            .setContourMode(FaceDetectorOptions.CONTOUR_MODE_ALL)
+        val options = FaceMeshDetectorOptions.Builder()
+            .setUseCase(FaceMeshDetectorOptions.FACE_MESH)
             .build()
 
-        // Получаем объект для обнаружения лиц
-        val detector = FaceDetection.getClient(options)
+        // Получаем объект для обнаружения сетки лица
+        val detector = FaceMeshDetection.getClient(options)
 
         // Запускаем слушатель на обнаружение лица и завершение поиска лиц
         detector.process(image)
@@ -44,9 +41,8 @@ fun addFaceDetectionListener(
                 // Проходим по лицам
                 for (face in faces) {
                     // Переносим все точки на лице в List
-                    val contourPoints = face.allContours
-                        .flatMap { it.points }
-                        .map { Point(it.x.toInt(), it.y.toInt()) }
+                    val meshPoints = face.allPoints
+                        .map { Point(it.position.x.toInt(), it.position.y.toInt()) }
 
                     // Расчитываем отношение сторон картинки, которую получаем с камеры
                     val imageAspectRatio = imageProxy.width.toFloat() / imageProxy.height
@@ -79,16 +75,19 @@ fun addFaceDetectionListener(
                     }
 
                     // Применяем масштабирование и смещение
-                    var transformedPoints = contourPoints.map { point ->
+                    var transformedPoints = meshPoints.map { point ->
                         Point(
                             ((point.x * scaleX) + offsetX).toInt(),
                             ((point.y * scaleY) + offsetY).toInt()
                         )
                     }
 
+                    // Индексы точек вокруг левого и правого глаза
+                    val leftEyeIndices = listOf(133, 155, 154, 145, 144, 153, 163, 144, 160, 161)
+                    val rightEyeIndices = listOf(362, 382, 381, 374, 373, 380, 390, 373, 387, 388)
                     // Получаем положение глаз для отображения очков
-                    val leftEyePosition = face.getLandmark(FaceLandmark.LEFT_EYE)?.position
-                    val rightEyePosition = face.getLandmark(FaceLandmark.RIGHT_EYE)?.position
+                    val leftEyePosition = getAveragePosition(face, leftEyeIndices)
+                    val rightEyePosition = getAveragePosition(face, rightEyeIndices)
 
                     // Высчитываем смещение глаз(выше написано зачем)
                     var transformedLeftEye: Point? = null
@@ -144,3 +143,4 @@ fun addFaceDetectionListener(
         imageProxy.close()
     }
 }
+
