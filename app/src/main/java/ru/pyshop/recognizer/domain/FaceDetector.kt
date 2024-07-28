@@ -7,7 +7,9 @@ import androidx.camera.core.ImageProxy
 import com.google.mlkit.vision.common.InputImage
 import com.google.mlkit.vision.face.FaceDetection
 import com.google.mlkit.vision.face.FaceDetectorOptions
+import com.google.mlkit.vision.face.FaceLandmark
 import ru.pyshop.recognizer.domain.enums.CameraSide
+import ru.pyshop.recognizer.domain.models.FaceModel
 
 // Функция для обнаружения лиц
 @OptIn(ExperimentalGetImage::class)
@@ -16,7 +18,7 @@ fun addFaceDetectionListener(
     previewWidth: Int,
     previewHeight: Int,
     cameraSide: CameraSide,
-    onPositionChange: (List<List<Point>>) -> Unit
+    onPositionChange: (List<FaceModel>) -> Unit
 ) {
     val mediaImage = imageProxy.image // Получаем объект Image
     if (mediaImage != null) {
@@ -37,7 +39,7 @@ fun addFaceDetectionListener(
         detector.process(image)
             .addOnSuccessListener { faces ->
                 // Список всех точек всех лиц
-                val allTransformedPoints: ArrayList<List<Point>> = ArrayList()
+                val allTransformedPoints: ArrayList<FaceModel> = ArrayList()
 
                 // Проходим по лицам
                 for (face in faces) {
@@ -84,15 +86,51 @@ fun addFaceDetectionListener(
                         )
                     }
 
-                    // Если используется фронтальная камера, отражаем точки по горизонтали
+                    // Получаем положение глаз для отображения очков
+                    val leftEyePosition = face.getLandmark(FaceLandmark.LEFT_EYE)?.position
+                    val rightEyePosition = face.getLandmark(FaceLandmark.RIGHT_EYE)?.position
+
+                    // Высчитываем смещение глаз(выше написано зачем)
+                    var transformedLeftEye: Point? = null
+                    var transformedRightEye: Point? = null
+
+                    if (leftEyePosition != null) { // Если глаз обнаружен
+                        // Высчитываем смещение левого глаза
+                        transformedLeftEye = Point(
+                            ((leftEyePosition.x * scaleX) + offsetX).toInt(),
+                            ((leftEyePosition.y * scaleY) + offsetY).toInt()
+                        )
+                    }
+
+                    if (rightEyePosition != null) { // Если глаз обнаружен
+                        // Высчитываем смещение правого глаза
+                        transformedRightEye = Point(
+                            ((rightEyePosition.x * scaleX) + offsetX).toInt(),
+                            ((rightEyePosition.y * scaleY) + offsetY).toInt()
+                        )
+                    }
+
+                    // Если используется фронтальная камера, отражаем все точки по горизонтали
                     if (cameraSide == CameraSide.FRONT) {
                         transformedPoints = transformedPoints.map { point ->
                             Point(previewWidth - point.x, point.y)
                         }
+                        transformedLeftEye?.let {
+                            transformedLeftEye = Point(previewWidth - it.x, it.y)
+                        }
+                        transformedRightEye?.let {
+                            transformedRightEye = Point(previewWidth - it.x, it.y)
+                        }
                     }
 
-                    // Добавляем лицо в спаписок
-                    allTransformedPoints.add(transformedPoints)
+                    // Добавляем точки лица в список
+                    allTransformedPoints.add(
+                        FaceModel(
+                            transformedPoints,
+                            transformedLeftEye,
+                            transformedRightEye
+                        )
+                    )
                 }
                 // Сообщаем об изменении
                 onPositionChange(allTransformedPoints)

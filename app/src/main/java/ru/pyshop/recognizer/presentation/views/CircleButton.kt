@@ -9,23 +9,23 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.res.colorResource
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import ru.pyshop.recognizer.R
 
-// Кнопка "Повернуть камеру"
+// Кастомный компонент круглой кнопки
 @Composable
-fun SwitchCameraButton(modifier: Modifier, onClick: () -> Unit) {
+fun CircleButton(modifier: Modifier, painter: Painter, onClick: () -> Unit) {
     IconButton(
         onClick = { onClick() },
         modifier = modifier
-            .padding(10.dp)
-            .height(60.dp).width(60.dp)
+            .height(60.dp)
+            .width(60.dp)
             .background(colorResource(id = R.color.fill), CircleShape),
     ) {
         Icon(
-            painterResource(id = R.drawable.switch_camera_icon),
+            painter,
             tint = colorResource(id = R.color.content),
             contentDescription = null,
         )

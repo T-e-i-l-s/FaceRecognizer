@@ -1,6 +1,5 @@
 package ru.pyshop.recognizer.presentation.views
 
-import android.graphics.Point
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -15,18 +14,20 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import ru.pyshop.recognizer.domain.models.FaceModel
 import ru.pyshop.recognizer.domain.addFaceDetectionListener
 import ru.pyshop.recognizer.domain.enums.CameraSide
+import ru.pyshop.recognizer.domain.models.EffectsStatusModel
 import java.util.concurrent.Executors
 
 // View, который демонстрирует изображение с камеры
 @Composable
-fun CameraView(cameraSide: CameraSide, modifier: Modifier) {
+fun CameraView(cameraSide: CameraSide, effectsStatus: EffectsStatusModel, modifier: Modifier) {
     val context = LocalContext.current
     // Изображение с камеры, которое видит пользователь
     val previewView = remember { PreviewView(context) }
-    // Список точек лица, если оно обнаружено
-    val contour = remember { mutableStateOf<List<List<Point>>?>(null) }
+    // Список точек лиц, если лица обнаружены
+    val contour = remember { mutableStateOf<List<FaceModel>?>(null) }
 
     // При запуске получаем изображение с камеры и начинаем искать лица
     LaunchedEffect(cameraSide) {
@@ -59,7 +60,12 @@ fun CameraView(cameraSide: CameraSide, modifier: Modifier) {
                 .also {
                     it.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
                         // Подключаем ml kit
-                        addFaceDetectionListener(imageProxy, previewView.width, previewView.height, cameraSide) { faceContour ->
+                        addFaceDetectionListener(
+                            imageProxy,
+                            previewView.width,
+                            previewView.height,
+                            cameraSide
+                        ) { faceContour ->
                             // При обновлении данных о лицах локализируем их
                             contour.value = faceContour
                         }
@@ -87,6 +93,6 @@ fun CameraView(cameraSide: CameraSide, modifier: Modifier) {
 
     // Отображаем разметку лица, которую получаем из ml kit
     contour.value?.let {
-        FaceContourView(contours = it, modifier = modifier)
+        FaceContourView(contours = it, effectsStatus, modifier = modifier)
     }
 }
