@@ -4,4 +4,7 @@
 
     <!--  UI  -->
     <string name="switch_camera_button">Повернуть камеру</string>
+
+    <!--  Toasts  -->
+    <string name="camera_error">Ошибка чтения камеры</string>
 </resources>

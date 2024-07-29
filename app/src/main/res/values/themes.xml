@@ -3,5 +3,6 @@
 
     <style name="Theme.Recognizer" parent="android:Theme.Material.Light.NoActionBar">
         <item name="android:colorPrimaryDark">#000000</item>
+        <item name="android:windowBackground">#000000</item>
     </style>
 </resources>

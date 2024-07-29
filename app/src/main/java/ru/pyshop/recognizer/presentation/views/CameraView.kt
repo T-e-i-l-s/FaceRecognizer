@@ -1,5 +1,6 @@
 package ru.pyshop.recognizer.presentation.views
 
+import android.widget.Toast
 import androidx.camera.core.CameraSelector
 import androidx.camera.core.ImageAnalysis
 import androidx.camera.core.Preview
@@ -14,6 +15,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.viewinterop.AndroidView
 import androidx.core.content.ContextCompat
 import androidx.lifecycle.LifecycleOwner
+import ru.pyshop.recognizer.R
 import ru.pyshop.recognizer.domain.models.FaceModel
 import ru.pyshop.recognizer.domain.addFaceDetectionListener
 import ru.pyshop.recognizer.domain.enums.CameraSide
@@ -36,52 +38,61 @@ fun CameraView(cameraSide: CameraSide, effectsStatus: EffectsStatusModel, modifi
 
         // Создаем слушатель камеры
         cameraProviderFuture.addListener({
-            // Получаем ProccessProviderFuture
-            val cameraProvider = cameraProviderFuture.get()
+            try {
+                // Получаем ProccessProviderFuture
+                val cameraProvider = cameraProviderFuture.get()
 
-            // Отвязываем все ранее созданные ProccessProviderFuture
-            cameraProvider.unbindAll()
+                // Отвязываем все ранее созданные ProccessProviderFuture
+                cameraProvider.unbindAll()
 
-            // Получаем картинку с камеры, которую будем выводить
-            val preview = Preview.Builder().build()
+                // Получаем картинку с камеры, которую будем выводить
+                val preview = Preview.Builder().build()
 
-            // Настраиваем камеру
-            val cameraSelector = CameraSelector.Builder()
-                .requireLensFacing(
-                    // Выбираем сторону камеры
-                    if (cameraSide == CameraSide.FRONT) CameraSelector.LENS_FACING_FRONT
-                    else CameraSelector.LENS_FACING_BACK
-                )
-                .build()
+                // Настраиваем камеру
+                val cameraSelector = CameraSelector.Builder()
+                    .requireLensFacing(
+                        // Выбираем сторону камеры
+                        if (cameraSide == CameraSide.FRONT) CameraSelector.LENS_FACING_FRONT
+                        else CameraSelector.LENS_FACING_BACK
+                    )
+                    .build()
 
-            // Начинаем обработку изоражения и поиск лиц
-            val imageAnalyzer = ImageAnalysis.Builder()
-                .build()
-                .also {
-                    it.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
-                        // Подключаем ml kit
-                        addFaceDetectionListener(
-                            imageProxy,
-                            previewView.width,
-                            previewView.height,
-                            cameraSide
-                        ) { faceContour ->
-                            // При обновлении данных о лицах локализируем их
-                            contour.value = faceContour
+                // Начинаем обработку изоражения и поиск лиц
+                val imageAnalyzer = ImageAnalysis.Builder()
+                    .build()
+                    .also {
+                        it.setAnalyzer(Executors.newSingleThreadExecutor()) { imageProxy ->
+                            // Подключаем ml kit
+                            addFaceDetectionListener(
+                                imageProxy,
+                                previewView.width,
+                                previewView.height,
+                                cameraSide
+                            ) { faceContour ->
+                                // При обновлении данных о лицах локализируем их
+                                contour.value = faceContour
+                            }
                         }
                     }
-                }
 
-            // Даем Preview знать что мы готовы к получению данных
-            preview.setSurfaceProvider(previewView.surfaceProvider)
+                // Даем Preview знать что мы готовы к получению данных
+                preview.setSurfaceProvider(previewView.surfaceProvider)
 
-            // Соединяем жизненный цикл камеры с приложением
-            cameraProvider.bindToLifecycle(
-                context as LifecycleOwner,
-                cameraSelector,
-                preview,
-                imageAnalyzer
-            )
+                // Соединяем жизненный цикл камеры с приложением
+                cameraProvider.bindToLifecycle(
+                    context as LifecycleOwner,
+                    cameraSelector,
+                    preview,
+                    imageAnalyzer
+                )
+            } catch (e: Exception) {
+                // Выводим Toast с ошибкой камеры
+                Toast.makeText(
+                    context,
+                    context.getString(R.string.camera_error),
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         }, ContextCompat.getMainExecutor(context))
     }
 
